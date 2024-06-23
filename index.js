@@ -64,4 +64,4 @@ function validateParams(searchParams) {
     return Ok(result);
 };
 
-app.listen(8080, () => console.log("Server running"));
+app.listen(80, () => console.log("Server running"));
