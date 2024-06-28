@@ -2,8 +2,11 @@ const { fetchBoletim, sendFormRequest } = require('./boletim');
 const { Ok, Err, unwrap } = require('./err');
 
 const express = require('express');
+const cors = require('cors');
 
 const app = express();
+
+app.use(cors({ origin: '*' }));
 
 app.get('/', async (req, res) => {
     let result = validateParams(new Map(Object.entries(req.query)));
