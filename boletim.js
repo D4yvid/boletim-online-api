@@ -41,6 +41,10 @@ const sendFormRequest = async ({ studentName, motherName, birthDate, year }) => 
 
         let text = await response.text();
 
+        if (text.indexOf("O aluno informado") != -1) {
+            return Err("The user doesn't exist");
+        }
+
         let windowLocation = text.lastIndexOf('window.location');
 
         if (windowLocation <= 0) {
@@ -300,19 +304,35 @@ const getBoletim = async ({ boletimUrl, sessionId }) => {
 };
 
 async function fetchBoletim({ studentName, motherName, birthDate, year }) {
-    try {
-        let { sessionId, actionUrl } = expect(await sendFormRequest({ studentName, motherName, birthDate, year }));
+    let result = await sendFormRequest({ studentName, motherName, birthDate, year });
 
-        let { boletimUrl } = expect(await getBoletimURL({ actionUrl, sessionId }));
-
-        let { boletimData } = expect(await getBoletim({ boletimUrl, sessionId }));
-
-        return Ok(boletimData);
-    } catch (e) {
-        return Err(e);
+    if (!result.success) {
+        return result;
     }
+
+    let { actionUrl, sessionId } = unwrap(result);
+
+    result = await getBoletimURL({ actionUrl, sessionId });
+
+    if (!result.success) {
+        return result;
+    }
+
+    let { boletimUrl } = unwrap(result);
+
+    result = await getBoletim({ boletimUrl, sessionId });
+
+    
+    if (!result.success) {
+        return result;
+    }
+
+    let { boletimData } = unwrap(result);
+
+    return Ok(boletimData);
 }
 
 module.exports = {
-    fetchBoletim
+    fetchBoletim,
+    sendFormRequest
 };

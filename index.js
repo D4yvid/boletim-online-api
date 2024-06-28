@@ -1,4 +1,4 @@
-const { fetchBoletim } = require('./boletim');
+const { fetchBoletim, sendFormRequest } = require('./boletim');
 const { Ok, Err, unwrap } = require('./err');
 
 const express = require('express');
@@ -19,6 +19,20 @@ app.get('/', async (req, res) => {
     }
 
     return res.status(200).json(unwrap(result));
+});
+
+app.get('/validate', async (req, res) => {
+    let result = validateParams(new Map(Object.entries(req.query)));
+
+    if (!result.success) {
+        return res.status(400).json(result);
+    }
+
+    let { studentName, motherName, birthDate, year } = unwrap(result);
+
+    result = await sendFormRequest({ studentName, motherName, birthDate, year });
+
+    return res.status(result.success ? 200 : 400).json(result.success ? Ok(true) : result);
 });
 
 function validateParams(searchParams) {
