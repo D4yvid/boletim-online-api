@@ -1,5 +1,5 @@
 const { JSDOM } = require('jsdom');
-const { Ok, Err, expect } = require('./err');
+const { Ok, Err, expect, unwrap } = require('./err');
 
 const URL_BASE = 'https://www.seduc.pa.gov.br/portal/boletim_online/';
 
@@ -140,7 +140,7 @@ const parseDataTable = (dataTable) => {
                 } else if (name == 'th') {
                     nextIsValue = true;
 
-                    let normalizedName = content.replaceAll(':', '').replaceAll(/ - ([0-9]*)/g, '');
+                    let normalizedName = content.replaceAll(':', '').replaceAll(/ - ([0-9]*)/g, '').trim();
 
                     if (!TABLE_FIELD_TO_DATA_TABLE[normalizedName]) {
                         continue;
@@ -156,7 +156,7 @@ const parseDataTable = (dataTable) => {
                 } else if (name == 'td') {
                     nextIsValue = false;
 
-                    data[key] = content;
+                    data[key] = content.trim() == '' ? null : content.trim();
 
                     key = null;
                     continue;
@@ -227,13 +227,13 @@ const parseCurricularDataTable = (gradesTable) => {
                 if (dataName == 'grades') {
                     let gradeIndex = INDEX_OF_GRADES + rowIndex - 1;
 
-                    rowData.grades[gradeIndex] = parseFloat(content.replace(',', '.'));
+                    rowData.grades[gradeIndex] = parseFloat(content.trim().replace(',', '.'));
                     hasData = true;
                 } else {
                     if (dataName != 'subject' && dataName != 'finalResult')
-                        rowData[dataName] = parseFloat(content.replace(',', '.'));
+                        rowData[dataName] = parseFloat(content.trim().replace(',', '.'));
                     else {
-                        rowData[dataName] = content == '-' ? null : content;
+                        rowData[dataName] = content.trim() == '-' ? null : content.trim();
                     }
 
                     hasData = true;
@@ -267,7 +267,7 @@ const getBoletim = async ({ boletimUrl, sessionId }) => {
         let text = await response.text();
 
         let boletimData = {
-            data: {
+            information: {
                 school: null,
                 name: null,
                 course: null,
@@ -290,7 +290,7 @@ const getBoletim = async ({ boletimUrl, sessionId }) => {
             let dataTable = table.querySelector('tbody>tr>th>strong')?.innerHTML == 'Escola:';
 
             if (dataTable) {
-                boletimData.data = expect(parseDataTable(table));
+                boletimData.information = expect(parseDataTable(table));
                 continue;
             }
 

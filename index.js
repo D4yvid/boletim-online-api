@@ -1,5 +1,6 @@
 const { fetchBoletim, sendFormRequest } = require('./boletim');
 const { Ok, Err, unwrap } = require('./err');
+const expressCache = require('cache-express');
 
 const express = require('express');
 const cors = require('cors');
@@ -8,7 +9,14 @@ const app = express();
 
 app.use(cors({ origin: '*' }));
 
-app.get('/', async (req, res) => {
+app.get('/', expressCache({
+	onTimeout(key, value) {
+		console.log("[CACHE] removed", key);
+	},
+
+	// 1 day of cache
+	timeOut: 1000 * 60 * 24 * 1
+}), async (req, res) => {
     let result = validateParams(new Map(Object.entries(req.query)));
 
     if (!result.success) {
@@ -24,7 +32,14 @@ app.get('/', async (req, res) => {
     return res.status(200).json(unwrap(result));
 });
 
-app.get('/validate', async (req, res) => {
+app.get('/validate', expressCache({
+	onTimeout(key, value) {
+		console.log("[CACHE] removed", key);
+	},
+
+	// 1 day of cache
+	timeOut: 1000 * 60 * 24 * 1
+}), async (req, res) => {
     let result = validateParams(new Map(Object.entries(req.query)));
 
     if (!result.success) {
